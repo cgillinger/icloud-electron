@@ -2,9 +2,7 @@
 
 Access your iCloud services (Photos, Drive, Contacts) on Linux through dedicated application windows.
 
-![iCloud on Linux](https://img.shields.io/badge/Platform-Linux-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
-![Electron](https://img.shields.io/badge/Electron-33.x-brightgreen)
+![iCloud for Linux Screenshot](screenshot.png)
 
 ## 🎯 What This Is
 
@@ -26,7 +24,7 @@ This is a **lightweight Electron wrapper** that gives you dedicated application 
 
 - **Linux distribution** (tested on Ubuntu 24.04 LTS / Kubuntu 24.04 LTS)
 - **Node.js and npm** (version 18 or higher recommended)
-- **Apple ID account**
+- **Apple ID account with password login** (passkey/biometric login is not supported)
 - Internet connection
 
 ## 📦 Installation
@@ -88,7 +86,18 @@ cd ~/icloud-electron
 npx electron . photos Photos
 ```
 
-A window should open showing iCloud Photos. If it works, proceed to the next step!
+A window should open showing iCloud Photos.
+
+**⚠️ IMPORTANT - Login Instructions:**
+
+When the iCloud login screen appears:
+1. **DO NOT click "Sign in with passkey"** - it will hang and not work
+2. Click **"Continue with password"** instead
+3. Enter your Apple ID email and password
+4. Complete two-factor authentication when prompted (you'll get a code on your iPhone/iPad/Mac)
+5. Check **"Keep me signed in"** to stay logged in
+
+If the window works and you can see the login screen, proceed to the next step!
 
 ### Step 6: Install Launcher Script
 
@@ -246,7 +255,11 @@ icloud-electron <service-name> <window-title>
 - `numbers` - Numbers
 - `keynote` - Keynote
 
-Example desktop file for Notes:
+### Creating Desktop Shortcuts for Additional Services
+
+You can create desktop shortcuts for any iCloud service. Here are ready-to-use commands for all major services:
+
+**Notes:**
 ```bash
 cat > ~/.local/share/applications/icloud-notes-electron.desktop << 'EOF'
 [Desktop Entry]
@@ -258,7 +271,94 @@ Icon=accessories-text-editor
 Terminal=false
 Categories=Network;Office;
 EOF
+```
 
+**Mail:**
+```bash
+cat > ~/.local/share/applications/icloud-mail-electron.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=iCloud Mail
+Comment=Access iCloud Mail
+Exec=/usr/local/bin/icloud-electron mail Mail
+Icon=internet-mail
+Terminal=false
+Categories=Network;Email;
+EOF
+```
+
+**Calendar:**
+```bash
+cat > ~/.local/share/applications/icloud-calendar-electron.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=iCloud Calendar
+Comment=Access iCloud Calendar
+Exec=/usr/local/bin/icloud-electron calendar Calendar
+Icon=office-calendar
+Terminal=false
+Categories=Network;Office;Calendar;
+EOF
+```
+
+**Reminders:**
+```bash
+cat > ~/.local/share/applications/icloud-reminders-electron.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=iCloud Reminders
+Comment=Access iCloud Reminders
+Exec=/usr/local/bin/icloud-electron reminders Reminders
+Icon=task-due
+Terminal=false
+Categories=Network;Office;ProjectManagement;
+EOF
+```
+
+**Pages:**
+```bash
+cat > ~/.local/share/applications/icloud-pages-electron.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=iCloud Pages
+Comment=Access iCloud Pages
+Exec=/usr/local/bin/icloud-electron pages Pages
+Icon=x-office-document
+Terminal=false
+Categories=Network;Office;WordProcessor;
+EOF
+```
+
+**Numbers:**
+```bash
+cat > ~/.local/share/applications/icloud-numbers-electron.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=iCloud Numbers
+Comment=Access iCloud Numbers
+Exec=/usr/local/bin/icloud-electron numbers Numbers
+Icon=x-office-spreadsheet
+Terminal=false
+Categories=Network;Office;Spreadsheet;
+EOF
+```
+
+**Keynote:**
+```bash
+cat > ~/.local/share/applications/icloud-keynote-electron.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=iCloud Keynote
+Comment=Access iCloud Keynote
+Exec=/usr/local/bin/icloud-electron keynote Keynote
+Icon=x-office-presentation
+Terminal=false
+Categories=Network;Office;Presentation;
+EOF
+```
+
+**After creating any desktop file, update the database:**
+```bash
 update-desktop-database ~/.local/share/applications/
 ```
 
