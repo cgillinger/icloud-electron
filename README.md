@@ -112,40 +112,64 @@ chmod +x ~/icloud-electron/icloud-electron.sh
 sudo ln -s ~/icloud-electron/icloud-electron.sh /usr/local/bin/icloud-electron
 ```
 
+### Step 6b: Install iCloud Icons (Optional)
+
+Download Apple-style icons for better integration:
+
+```bash
+cd ~/icloud-electron
+chmod +x install-icons.sh
+./install-icons.sh
+```
+
+This will download iCloud icons to `~/.local/share/icons/icloud/`. If it fails, the app will use system default icons.
+
 ### Step 7: Create Desktop Shortcuts
 
 ```bash
+# Check if custom icons were installed
+if [ -d "$HOME/.local/share/icons/icloud" ]; then
+    PHOTOS_ICON="$HOME/.local/share/icons/icloud/photos.svg"
+    DRIVE_ICON="$HOME/.local/share/icons/icloud/drive.svg"
+    CONTACTS_ICON="$HOME/.local/share/icons/icloud/contacts.svg"
+else
+    # Fallback to system icons
+    PHOTOS_ICON="emblem-photos"
+    DRIVE_ICON="folder-cloud"
+    CONTACTS_ICON="x-office-address-book"
+fi
+
 mkdir -p ~/.local/share/applications
 
-cat > ~/.local/share/applications/icloud-photos-electron.desktop << 'EOF'
+cat > ~/.local/share/applications/icloud-photos-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Photos
 Comment=Access iCloud Photos
 Exec=/usr/local/bin/icloud-electron photos Photos
-Icon=emblem-photos
+Icon=$PHOTOS_ICON
 Terminal=false
 Categories=Network;Graphics;Photography;
 EOF
 
-cat > ~/.local/share/applications/icloud-drive-electron.desktop << 'EOF'
+cat > ~/.local/share/applications/icloud-drive-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Drive
 Comment=Access iCloud Drive
 Exec=/usr/local/bin/icloud-electron iclouddrive Drive
-Icon=folder-cloud
+Icon=$DRIVE_ICON
 Terminal=false
 Categories=Network;FileTransfer;
 EOF
 
-cat > ~/.local/share/applications/icloud-contacts-electron.desktop << 'EOF'
+cat > ~/.local/share/applications/icloud-contacts-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Contacts
 Comment=Access iCloud Contacts
 Exec=/usr/local/bin/icloud-electron contacts Contacts
-Icon=x-office-address-book
+Icon=$CONTACTS_ICON
 Terminal=false
 Categories=Network;Office;ContactManagement;
 EOF
@@ -259,15 +283,20 @@ icloud-electron <service-name> <window-title>
 
 You can create desktop shortcuts for any iCloud service. Here are ready-to-use commands for all major services:
 
+**Note:** Replace `Icon=` paths below with your installed icon paths if you ran `install-icons.sh`. Otherwise, the system default icons will be used.
+
 **Notes:**
 ```bash
-cat > ~/.local/share/applications/icloud-notes-electron.desktop << 'EOF'
+NOTES_ICON="${HOME}/.local/share/icons/icloud/notes.svg"
+[ ! -f "$NOTES_ICON" ] && NOTES_ICON="accessories-text-editor"
+
+cat > ~/.local/share/applications/icloud-notes-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Notes
 Comment=Access iCloud Notes
 Exec=/usr/local/bin/icloud-electron notes Notes
-Icon=accessories-text-editor
+Icon=$NOTES_ICON
 Terminal=false
 Categories=Network;Office;
 EOF
@@ -275,13 +304,16 @@ EOF
 
 **Mail:**
 ```bash
-cat > ~/.local/share/applications/icloud-mail-electron.desktop << 'EOF'
+MAIL_ICON="${HOME}/.local/share/icons/icloud/mail.svg"
+[ ! -f "$MAIL_ICON" ] && MAIL_ICON="internet-mail"
+
+cat > ~/.local/share/applications/icloud-mail-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Mail
 Comment=Access iCloud Mail
 Exec=/usr/local/bin/icloud-electron mail Mail
-Icon=internet-mail
+Icon=$MAIL_ICON
 Terminal=false
 Categories=Network;Email;
 EOF
@@ -289,13 +321,16 @@ EOF
 
 **Calendar:**
 ```bash
-cat > ~/.local/share/applications/icloud-calendar-electron.desktop << 'EOF'
+CALENDAR_ICON="${HOME}/.local/share/icons/icloud/calendar.svg"
+[ ! -f "$CALENDAR_ICON" ] && CALENDAR_ICON="office-calendar"
+
+cat > ~/.local/share/applications/icloud-calendar-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Calendar
 Comment=Access iCloud Calendar
 Exec=/usr/local/bin/icloud-electron calendar Calendar
-Icon=office-calendar
+Icon=$CALENDAR_ICON
 Terminal=false
 Categories=Network;Office;Calendar;
 EOF
@@ -303,13 +338,16 @@ EOF
 
 **Reminders:**
 ```bash
-cat > ~/.local/share/applications/icloud-reminders-electron.desktop << 'EOF'
+REMINDERS_ICON="${HOME}/.local/share/icons/icloud/reminders.svg"
+[ ! -f "$REMINDERS_ICON" ] && REMINDERS_ICON="task-due"
+
+cat > ~/.local/share/applications/icloud-reminders-electron.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=iCloud Reminders
 Comment=Access iCloud Reminders
 Exec=/usr/local/bin/icloud-electron reminders Reminders
-Icon=task-due
+Icon=$REMINDERS_ICON
 Terminal=false
 Categories=Network;Office;ProjectManagement;
 EOF
