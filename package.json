@@ -1,0 +1,15 @@
+{
+  "name": "icloud-electron",
+  "version": "1.0.0",
+  "description": "iCloud client for Linux using Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": ["icloud", "linux"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^33.2.1"
+  }
+}
