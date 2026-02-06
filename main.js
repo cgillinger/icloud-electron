@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, session } = require('electron');
 
 // Valid iCloud services that can be launched
 const VALID_SERVICES = [
@@ -31,6 +31,18 @@ const WINDOW_DEFAULTS = {
     minHeight: 600
 };
 
+function isAllowedURL(url) {
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:') return false;
+        const h = parsed.hostname;
+        return h === 'icloud.com' || h.endsWith('.icloud.com')
+            || h === 'apple.com' || h.endsWith('.apple.com');
+    } catch (_) {
+        return false;
+    }
+}
+
 let mainWindow;
 
 function createWindow(service, title) {
@@ -47,21 +59,23 @@ function createWindow(service, title) {
 
     mainWindow.loadURL(`${ICLOUD_ORIGIN}/${service}`);
 
+    // Begränsa navigering i huvudfönstret till iCloud/Apple-domäner
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        if (!isAllowedURL(url)) {
+            event.preventDefault();
+        }
+    });
+
     // Hantera nya fönster (popups) - tillåt bara iCloud-domäner
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        try {
-            const parsed = new URL(url);
-            if (parsed.hostname.endsWith('.icloud.com') || parsed.hostname.endsWith('.apple.com')) {
-                return {
-                    action: 'allow',
-                    overrideBrowserWindowOptions: {
-                        ...WINDOW_DEFAULTS,
-                        webPreferences: WEB_PREFERENCES
-                    }
-                };
-            }
-        } catch (_) {
-            // Ogiltig URL - neka
+        if (isAllowedURL(url)) {
+            return {
+                action: 'allow',
+                overrideBrowserWindowOptions: {
+                    ...WINDOW_DEFAULTS,
+                    webPreferences: WEB_PREFERENCES
+                }
+            };
         }
         return { action: 'deny' };
     });
@@ -90,6 +104,12 @@ if (!VALID_SERVICES.includes(service)) {
 }
 
 app.whenReady().then(() => {
+    // Neka behörigheter som appen inte behöver (kamera, mikrofon, etc.)
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+        const allowed = ['clipboard-read', 'clipboard-sanitized-write', 'notifications'];
+        callback(allowed.includes(permission));
+    });
+
     createWindow(service, title);
 });
 

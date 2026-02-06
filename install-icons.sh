@@ -4,13 +4,15 @@
 set -e
 
 ICON_DIR="$HOME/.local/share/icons/icloud"
-TEMP_DIR="/tmp/icloud-icons-$$"
+TEMP_DIR="$(mktemp -d)"
+
+# Rensa temp-katalogen vid avbrott eller fel
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 echo "📥 Installing iCloud icons..."
 
 # Create directories
 mkdir -p "$ICON_DIR"
-mkdir -p "$TEMP_DIR"
 
 BASE_URL="https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps"
 
@@ -43,9 +45,6 @@ for name in "${!ICONS[@]}"; do
         echo "  ⚠️  Could not download ${name} icon"
     fi
 done
-
-# Cleanup temp directory
-rm -rf "$TEMP_DIR"
 
 # Report results
 if [ "$downloaded" -eq 0 ]; then
