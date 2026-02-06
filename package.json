@@ -9,7 +9,7 @@
   "keywords": ["icloud", "linux"],
   "author": "",
   "license": "MIT",
-  "dependencies": {
+  "devDependencies": {
     "electron": "^33.2.1"
   }
 }
