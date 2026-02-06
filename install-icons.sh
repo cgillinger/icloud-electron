@@ -4,64 +4,57 @@
 set -e
 
 ICON_DIR="$HOME/.local/share/icons/icloud"
-TEMP_DIR="/tmp/icloud-icons-$$"
+TEMP_DIR="$(mktemp -d)"
+
+# Rensa temp-katalogen vid avbrott eller fel
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 echo "📥 Installing iCloud icons..."
 
 # Create directories
 mkdir -p "$ICON_DIR"
-mkdir -p "$TEMP_DIR"
 
-cd "$TEMP_DIR"
+BASE_URL="https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps"
 
-# Use Papirus icon theme - high quality, consistent style
+# Associative array: local filename -> remote icon name
+declare -A ICONS=(
+    [photos]="multimedia-photo-manager"
+    [drive]="folder-cloud"
+    [contacts]="preferences-contact-list"
+    [notes]="accessories-notes"
+    [mail]="internet-mail"
+    [calendar]="office-calendar"
+    [reminders]="stock_todo"
+)
+
 echo "  Downloading icon set..."
 
-# Photos - photo manager icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/multimedia-photo-manager.svg" -o photos.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Photos icon"
+downloaded=0
+for name in "${!ICONS[@]}"; do
+    remote="${ICONS[$name]}"
+    if curl -sL --fail "${BASE_URL}/${remote}.svg" -o "${TEMP_DIR}/${name}.svg" 2>/dev/null; then
+        # Remove if file is empty (0 bytes)
+        if [ -s "${TEMP_DIR}/${name}.svg" ]; then
+            cp -f "${TEMP_DIR}/${name}.svg" "$ICON_DIR/"
+            ((downloaded++))
+        else
+            rm -f "${TEMP_DIR}/${name}.svg"
+            echo "  ⚠️  Empty response for ${name} icon"
+        fi
+    else
+        echo "  ⚠️  Could not download ${name} icon"
+    fi
+done
 
-# Drive - cloud folder icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/folder-cloud.svg" -o drive.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Drive icon"
-
-# Contacts - address book icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/preferences-contact-list.svg" -o contacts.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Contacts icon"
-
-# Notes - notes/memo icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/accessories-notes.svg" -o notes.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Notes icon"
-
-# Mail - mail icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/internet-mail.svg" -o mail.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Mail icon"
-
-# Calendar - calendar icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/office-calendar.svg" -o calendar.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Calendar icon"
-
-# Reminders - task/todo icon
-curl -sL "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/master/Papirus/64x64/apps/stock_todo.svg" -o reminders.svg 2>/dev/null || \
-echo "  ⚠️  Could not download Reminders icon"
-
-# Copy icons to icon directory
-cp -f *.svg "$ICON_DIR/" 2>/dev/null || true
-
-# Remove empty files (0 bytes)
-find "$ICON_DIR" -type f -size 0 -delete 2>/dev/null || true
-
-# Cleanup
-cd ~
-rm -rf "$TEMP_DIR"
-
-# Check if we got any icons
-if [ -z "$(ls -A $ICON_DIR 2>/dev/null)" ]; then
+# Report results
+if [ "$downloaded" -eq 0 ]; then
     echo "  ⚠️  No icons downloaded, using system default icons"
     rmdir "$ICON_DIR" 2>/dev/null || true
 else
-    echo "✅ Icons installed to: $ICON_DIR"
-    ls -lh "$ICON_DIR" | grep -v "^total" | awk '{print "   " $9 " (" $5 ")"}'
+    echo "✅ ${downloaded} icon(s) installed to: $ICON_DIR"
+    for f in "$ICON_DIR"/*.svg; do
+        [ -f "$f" ] && echo "   $(basename "$f") ($(du -h "$f" | cut -f1))"
+    done
 fi
 
 echo ""
