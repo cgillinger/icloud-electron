@@ -2,6 +2,8 @@
 
 Access your iCloud services (Photos, Drive, Contacts) on Linux through dedicated application windows.
 
+> This is a personal hobby project I build for my own use and publish in case it's useful to someone else. I work on it in my spare time, so issues and PRs are welcome but replies may be slow. Use at your own risk.
+
 ![iCloud for Linux Screenshot](screenshot.png)
 
 ## 🎯 What This Is
