@@ -16,14 +16,10 @@ your own risk.
 > [changelog](CHANGELOG.md).
 
 Your iCloud services — Photos, Drive, Contacts, Mail and the rest — each in its
-own application window, launched from your desktop menu.
-
-**"Sign in with iPhone" actually works.** Scan the QR code on Apple's login
-page with your iPhone camera, approve with Face ID or Touch ID, and you're in —
-no password typing. So do passkeys and every other browser feature, because
-this runs a complete browser. Electron-based wrappers cannot do this
-([electron/electron#24573](https://github.com/electron/electron/issues/24573));
-making it work is what version 2.0 was about.
+own application window, launched from your desktop menu. Scan the QR code on
+Apple's login page with your iPhone camera, approve with Face ID or Touch ID,
+and you're in — no password typing. Passkeys and every other browser feature
+work too, because this runs a complete browser.
 
 ![iCloud for Linux Screenshot](screenshot.png)
 
