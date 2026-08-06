@@ -1,5 +1,12 @@
 # iCloud for Linux
 
+> ### 🆕 New in version 2
+> The app was rebuilt from the ground up — from an Electron shell to a real,
+> bundled browser — and the difference is one feature: **"Sign in with iPhone"
+> now actually works.** Version 2.1 adds a browser that verifies its own
+> downloads and keeps itself updated. Details in the
+> [changelog](CHANGELOG.md).
+
 Your iCloud services — Photos, Drive, Contacts, Mail and the rest — each in its
 own application window, launched from your desktop menu.
 
