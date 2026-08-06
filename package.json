@@ -1,6 +1,6 @@
 {
   "name": "icloud-electron",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "iCloud on Linux: each service in its own window, with full passkey and iPhone sign-in support",
   "scripts": {
     "install-browser": "./tools/get-chromium.sh",

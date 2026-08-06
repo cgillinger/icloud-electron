@@ -6,6 +6,19 @@ this project uses [semantic versioning](https://semver.org/).
 The app shows the newest entries in a window the first time you start it after
 an update.
 
+## [2.2.0] - 2026-08-06
+
+### Changed
+
+- **Downloads now ask where to save.** An app-mode window has no toolbar and
+  no download bubble, so a download used to finish silently in your Downloads
+  folder with nothing visible on screen. A save dialog gives both feedback
+  that something happened and the choice of destination — the desktop, a
+  folder, anywhere. New profiles get this from the start; existing profiles
+  are migrated once, on the first launch where no window is already open
+  (needs `python3`; if you later turn the prompt off again, that choice
+  sticks).
+
 ## [2.1.0] - 2026-08-06
 
 ### Added
