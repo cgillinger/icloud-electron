@@ -1,5 +1,11 @@
 # iCloud for Linux
 
+This is a personal project I built first and foremost for my own use — I
+wanted my iCloud services on my Linux desktop. I've published it in case
+someone else has the same need and can use it as a head start. I work on it in
+my spare time, so issues and PRs are welcome but replies may be slow. Use at
+your own risk.
+
 > ### 🆕 New in version 2
 > The app was rebuilt from the ground up — from an Electron shell to a real,
 > bundled browser — and the difference is one feature: **"Sign in with iPhone"
@@ -16,10 +22,6 @@ no password typing. So do passkeys and every other browser feature, because
 this runs a complete browser. Electron-based wrappers cannot do this
 ([electron/electron#24573](https://github.com/electron/electron/issues/24573));
 making it work is what version 2.0 was about.
-
-> This is a personal hobby project I build for my own use and publish in case
-> it's useful to someone else. I work on it in my spare time, so issues and PRs
-> are welcome but replies may be slow. Use at your own risk.
 
 ![iCloud for Linux Screenshot](screenshot.png)
 
