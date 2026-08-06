@@ -294,6 +294,14 @@ The changelog page escapes all text before rendering and applies a
 `default-src 'none'` policy, so even a hostile `CHANGELOG.md` cannot execute
 anything. Both are short enough to read in full, which is the point.
 
+## Planned work
+
+[`docs/TASK-browser-updates.md`](docs/TASK-browser-updates.md) describes the
+next piece of work: sourcing the bundled browser from a stable, signed channel
+and keeping it updated automatically. That closes the known weaknesses
+described above. A pure-Chromium option will remain for anyone who wants no
+proprietary code.
+
 ## Versioning and changelog
 
 The project follows [semantic versioning](https://semver.org/). Every release
