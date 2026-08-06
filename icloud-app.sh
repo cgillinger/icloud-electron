@@ -105,8 +105,31 @@ if [ ! -e "$PREFS_DIR/Preferences" ]; then
 {"credentials_enable_service":false,"credentials_enable_autosignin":false,
  "autofill":{"credit_card_enabled":false,"profile_enabled":false},
  "browser":{"check_default_browser":false},
+ "download":{"prompt_for_download":true},
  "profile":{"password_manager_enabled":false}}
 PREFS
+fi
+
+# Profiles created before 2.2.0 predate the ask-where-to-save default above.
+# Migrate it in exactly once - a marker file, not a key test, because Chromium
+# itself writes download keys as soon as anything is downloaded. Only when the
+# browser is not running: it rewrites Preferences on exit, which would silently
+# discard an edit made underneath it. The user's later choice is respected.
+if [ -f "$PREFS_DIR/Preferences" ] && [ ! -f "$PROFILE/.download-prompt-migrated" ] \
+        && command -v python3 >/dev/null 2>&1 \
+        && ! pgrep -f "$BROWSER" >/dev/null 2>&1; then
+    if python3 - "$PREFS_DIR/Preferences" <<'PY' 2>/dev/null
+import json, sys
+path = sys.argv[1]
+with open(path) as f:
+    prefs = json.load(f)
+prefs.setdefault("download", {})["prompt_for_download"] = True
+with open(path, "w") as f:
+    json.dump(prefs, f)
+PY
+    then
+        touch "$PROFILE/.download-prompt-migrated"
+    fi
 fi
 
 # Show what changed, once, after an update. Never blocks the app launch.
