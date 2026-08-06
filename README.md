@@ -279,8 +279,7 @@ That is a deliberate reversal of the previous design. Until version 2.0 this
 was an Electron app, and Electron apps are only as safe as the boundary the
 author draws between page and host. That boundary is where the interesting bugs
 live: preload scripts, `contextIsolation`, IPC validation, navigation
-allowlists, permission handlers. A security review of the 1.x code found real
-defects in exactly those places. Version 2.0 deletes the boundary rather than
+allowlists, permission handlers. Version 2.0 deletes the boundary rather than
 guarding it.
 
 Concretely, what you get and where it comes from:
