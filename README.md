@@ -1,5 +1,7 @@
 # iCloud for Linux
 
+[![Platform: Linux](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black)](#requirements) [![Sign in with iPhone](https://img.shields.io/badge/Sign%20in%20with%20iPhone-works-0071E3?logo=apple&logoColor=white)](#signing-in) [![Passkeys](https://img.shields.io/badge/passkeys-supported-34C759?logo=webauthn&logoColor=white)](#signing-in) [![Just shell](https://img.shields.io/badge/runtime-none%2C%20just%20shell-4EAA25?logo=gnubash&logoColor=white)](#security-design-for-the-technically-inclined) [![Version](https://img.shields.io/github/package-json/v/cgillinger/icloud-electron?label=version&color=brightgreen)](CHANGELOG.md) [![License](https://img.shields.io/github/license/cgillinger/icloud-electron?color=green)](LICENSE)
+
 This is a personal project I built first and foremost for my own use — I
 wanted my iCloud services on my Linux desktop. I've published it in case
 someone else has the same need and can use it as a head start. I work on it in
@@ -447,6 +449,8 @@ trademark of Apple Inc.
 ## Keywords
 
 icloud linux, icloud ubuntu, icloud photos linux, icloud drive linux, icloud
-contacts linux, apple icloud linux, icloud client linux, sign in with iphone
-linux, passkey linux, icloud debian, icloud fedora, icloud arch linux, icloud
-kde, icloud gnome
+contacts linux, icloud mail linux, icloud calendar linux, icloud notes linux,
+apple icloud linux, icloud client linux, icloud app linux, icloud desktop
+linux, sign in with iphone linux, sign in with apple linux, passkey linux,
+webauthn linux, apple passkey linux, icloud debian, icloud fedora, icloud arch
+linux, icloud kde, icloud gnome, icloud without browser, icloud web app linux
