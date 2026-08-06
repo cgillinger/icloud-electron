@@ -1,7 +1,8 @@
 # Task: keep the bundled browser current and verified
 
-**Status:** implemented in 2.1.0 (2026-08-06) — see outcome notes below;
-"Sign in with iPhone" end-to-end verification on the new browser still pending
+**Status:** done — implemented in 2.1.0 and verified (2026-08-06); see outcome
+notes below. "Sign in with iPhone" tested end to end by Christian on the
+deployed Chrome 151.0.7922.75-1 build.
 **Created:** 2026-08-06
 **Applies to:** version 2.0.0
 **Estimated size:** one focused session
