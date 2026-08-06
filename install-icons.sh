@@ -36,7 +36,7 @@ for name in "${!ICONS[@]}"; do
         # Remove if file is empty (0 bytes)
         if [ -s "${TEMP_DIR}/${name}.svg" ]; then
             cp -f "${TEMP_DIR}/${name}.svg" "$ICON_DIR/"
-            ((downloaded++))
+            downloaded=$((downloaded + 1))
         else
             rm -f "${TEMP_DIR}/${name}.svg"
             echo "  ⚠️  Empty response for ${name} icon"
