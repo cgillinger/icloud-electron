@@ -1,15 +1,17 @@
 {
   "name": "icloud-electron",
-  "version": "1.0.0",
-  "description": "iCloud client for Linux using Electron",
-  "main": "main.js",
+  "version": "2.0.0",
+  "description": "iCloud on Linux: each service in its own window, with full passkey and iPhone sign-in support",
   "scripts": {
-    "start": "electron ."
+    "install-browser": "./tools/get-chromium.sh",
+    "start": "./icloud-app.sh photos Photos"
   },
-  "keywords": ["icloud", "linux"],
+  "keywords": [
+    "icloud",
+    "linux",
+    "chromium",
+    "passkey"
+  ],
   "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "electron": "^33.2.1"
-  }
+  "license": "MIT"
 }

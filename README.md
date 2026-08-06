@@ -1,449 +1,372 @@
-# iCloud for Linux (Electron)
+# iCloud for Linux
 
-Access your iCloud services (Photos, Drive, Contacts) on Linux through dedicated application windows.
+Your iCloud services — Photos, Drive, Contacts, Mail and the rest — each in its
+own application window, launched from your desktop menu.
 
-> This is a personal hobby project I build for my own use and publish in case it's useful to someone else. I work on it in my spare time, so issues and PRs are welcome but replies may be slow. Use at your own risk.
+> This is a personal hobby project I build for my own use and publish in case
+> it's useful to someone else. I work on it in my spare time, so issues and PRs
+> are welcome but replies may be slow. Use at your own risk.
 
 ![iCloud for Linux Screenshot](screenshot.png)
 
-## 🎯 What This Is
+## What it is
 
-This is a **lightweight Electron wrapper** that gives you dedicated application windows for iCloud services on Linux. Think of it as having separate browser windows specifically for iCloud, launched from your application menu.
+A launcher that opens iCloud in a dedicated Chromium window — no tabs, no
+address bar, one window per service, and your session kept between launches.
 
-### ✅ What It Does
-- Opens iCloud services in dedicated Electron windows
-- Creates desktop shortcuts for Photos, Drive, and Contacts
-- Maintains login sessions (you stay logged in)
-- Uses modern Chromium engine for full compatibility
+It ships its own Chromium build rather than using whatever browser happens to
+be installed, so it behaves the same on every machine and nothing breaks when
+you change your default browser.
 
-### ❌ What It Doesn't Do
-- Does NOT provide system integration (no file sync, no notifications)
-- Does NOT sync files to your local filesystem
-- Does NOT integrate with Linux file managers
-- It's essentially a dedicated browser for iCloud, not a native client
+**Sign in with iPhone works.** Scan the QR code on Apple's login page with your
+iPhone camera and you're in — no password typing. So do passkeys, and every
+other browser feature, because this runs a complete browser.
 
-## 🔧 Requirements
+### What it doesn't do
 
-- **Linux distribution** (tested on Ubuntu 24.04 LTS / Kubuntu 24.04 LTS)
-- **Node.js and npm** (version 18 or higher recommended)
-- **Apple ID account with password login** (passkey/biometric login is not supported)
-- Internet connection
+- No file sync, and no integration with your file manager
+- It doesn't sync your iCloud files to your disk
+- It is a dedicated browser for iCloud, not a native client
 
-## 📦 Installation
+## Requirements
 
-### Step 1: Install Node.js and npm
+- A Linux desktop (tested on Ubuntu 24.04 / Kubuntu 24.04)
+- `curl` and `unzip`, to fetch the browser once
+- About 500 MB of disk space
+- Bluetooth, **only** if you want "Sign in with iPhone" — the phone proves it
+  is nearby over Bluetooth Low Energy
+- Optional: Node.js, only to show the changelog window after an update
 
-**Ubuntu/Debian/Kubuntu:**
-```bash
-sudo apt update
-sudo apt install nodejs npm
-```
+You do **not** need Chrome, Chromium, Electron, or Node installed to run it.
 
-**Fedora:**
-```bash
-sudo dnf install nodejs npm
-```
-
-**Arch Linux:**
-```bash
-sudo pacman -S nodejs npm
-```
-
-Verify installation:
-```bash
-node --version
-npm --version
-```
-
-### Step 2: Clone or Download This Repository
+## Installation
 
 ```bash
-cd ~
-git clone https://github.com/YOUR_USERNAME/icloud-electron.git
-cd icloud-electron
-```
-
-Or download as ZIP and extract to `~/icloud-electron/`
-
-### Step 3: Install Electron
-
-```bash
+git clone https://github.com/cgillinger/icloud-electron.git ~/icloud-electron
 cd ~/icloud-electron
-npm install
+./tools/get-chromium.sh          # downloads Chromium, about 230 MB, once
+./icloud-app.sh photos Photos    # try it
 ```
 
-### Step 4: Fix Electron Sandbox Permissions
-
-This is **required** for Electron to run properly:
+Then make it available system-wide and add menu shortcuts:
 
 ```bash
-sudo chown root:root node_modules/electron/dist/chrome-sandbox
-sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+sudo ln -sf ~/icloud-electron/icloud-app.sh /usr/local/bin/icloud-app
+./install-icons.sh               # optional: Apple-style icons
 ```
 
-### Step 5: Test the Application
+Then create the menu shortcuts:
 
 ```bash
-cd ~/icloud-electron
-npx electron . photos Photos
+./tools/install-shortcuts.sh                    # Photos, Drive, Contacts, Calendar
+./tools/install-shortcuts.sh photos mail notes  # or pick your own
+./tools/install-shortcuts.sh --all              # every service
+./tools/install-shortcuts.sh --remove           # remove them again
 ```
 
-A window should open showing iCloud Photos.
+Available services: `photos`, `iclouddrive`, `contacts`, `notes`, `mail`,
+`calendar`, `reminders`, `pages`, `numbers`, `keynote`, `find`.
 
-**⚠️ IMPORTANT - Login Instructions:**
+The generated entries set `StartupWMClass` to the window identity Chromium
+actually reports, which is what gives each service its own icon in the dock
+instead of one shared browser icon.
 
-When the iCloud login screen appears:
-1. **DO NOT click "Sign in with passkey"** - it will hang and not work
-2. Click **"Continue with password"** instead
-3. Enter your Apple ID email and password
-4. Complete two-factor authentication when prompted (you'll get a code on your iPhone/iPad/Mac)
-5. Check **"Keep me signed in"** to stay logged in
+## Signing in
 
-If the window works and you can see the login screen, proceed to the next step!
+Open any service and you get Apple's normal login page, with two options:
 
-### Step 6: Install Launcher Script
+**With your iPhone.** Click "Sign in with iPhone", point your iPhone's Camera
+app at the QR code, and approve with Face ID or Touch ID. Your phone connects
+over Bluetooth to prove it is next to the computer. Nothing is typed and no
+password is involved.
+
+**With your password.** Enter your Apple ID and password, then the six-digit
+code that appears on one of your Apple devices. Tick "Keep me signed in" to
+stay logged in.
+
+Either way, one sign-in covers every iCloud service — they share one profile.
+
+## Why it bundles a browser
+
+Electron — the obvious way to build this, and what this project used until
+version 2.0 — packages Chromium's *rendering engine* but not its *browser
+layer*. WebAuthn is split straight across that line: the `navigator.credentials`
+API lives in the engine, but everything that makes it work in practice
+(choosing a transport, drawing the QR code, the credential picker, the PRF and
+largeBlob extensions) lives in the browser layer.
+
+The result is that "Sign in with iPhone" in an Electron app spins forever and
+never resolves. That is
+[electron/electron#24573](https://github.com/electron/electron/issues/24573),
+open since 2020 with no solution on Linux.
+
+Running a real Chromium sidesteps the whole problem: there is nothing to
+reimplement, because the browser already does it. Chromium is BSD-licensed and
+may be redistributed, which Google Chrome may not.
+
+## "Is it safe to log in to my Apple account here?"
+
+A fair question to ask before typing an Apple ID password into something a
+stranger wrote. Here is the plain answer.
+
+**This app is a shortcut, not a program that logs you in.**
+
+When you click "iCloud Photos" in your menu, a small script runs. It opens a
+browser window pointed at `icloud.com` and then hands over to it completely —
+the script becomes the browser process. From that moment you are simply using
+a browser, the same as if you had opened Chrome and typed `icloud.com`
+yourself. The only difference is cosmetic: the
+window has no tabs and no address bar, so it feels like an app.
+
+That means:
+
+- **Nothing of this project sits between you and Apple.** Your password goes
+  from the browser to Apple, exactly as it would in any browser. There is no
+  code here that can read it — once the window is open, the only thing running
+  is the browser itself.
+- **You are logging in to Apple's real website.** Not a copy, not a form this
+  project made. It is `https://www.icloud.com`, served by Apple, over an
+  encrypted connection the browser verifies.
+- **The browser is a normal one.** It is Chromium, the open-source browser that
+  Chrome, Edge, Brave and Opera are all built from. This project doesn't modify
+  it — it downloads it and starts it.
+- **This project has no server and collects nothing.** It has no account, no
+  statistics and no error reporting of its own. The browser it starts is an
+  ordinary browser, so it does contact Google for its own housekeeping, the
+  same as any Chromium would.
+
+**Why it has its own copy of the browser.** So it behaves the same on every
+machine, and so your iCloud login is kept in its own compartment rather than
+mixed into your everyday browsing.
+
+**What the app can see.** As much as a browser shortcut can see, which is
+nothing. What Apple can see is what Apple always sees when you use iCloud on
+the web.
+
+**What is worth a moment's thought.** Once you are logged in, the browser
+stores a session cookie so you don't have to sign in every time. Anyone with
+access to your user account on this computer could potentially copy that cookie
+and use your session. That is true of every browser on Linux, not something
+this app makes worse — but if you share the machine, sign out when you're done
+or don't tick "Keep me signed in".
+
+If you want the technical detail behind all of this, it is in the next section.
+
+## How your credentials and data are handled
+
+This app opens your Apple ID login. Here is exactly what happens to it.
+
+### Your password
+
+**The app never sees, stores, or transmits your password.**
+
+There is no application code between you and Apple. The launcher is a shell
+script: it `exec`s a browser pointed at `https://www.icloud.com/<service>`,
+replacing itself with the browser process. Everything after that is Chromium
+talking to Apple over HTTPS, exactly as any browser would. Nothing is injected
+into Apple's pages, and there is no extension, no proxy, and no
+instrumentation.
+
+You can read the entire launcher in a couple of minutes — about 170 lines of
+shell, most of it argument checking and window placement.
+
+### What is stored on your disk
+
+| What | Where |
+|------|-------|
+| Browser | `~/.local/share/icloud-app/chromium/` |
+| Session cookies, cache, local storage | `~/.config/icloud-app/profile/` |
+| Last version whose changelog you saw | `~/.config/icloud-app/profile/app-state.json` |
+
+The profile is separate from your everyday browser, so iCloud cookies never mix
+with your normal browsing, in either direction.
+
+**Worth knowing:** the session cookies in that profile are what keep you signed
+in. Chromium encrypts them with your desktop keyring when one is available, and
+falls back to weak, effectively unencrypted storage when it is not. Anything
+running as your user account can potentially read them and reuse your session.
+That is true of every Chromium profile on Linux, not something this app makes
+worse. To wipe everything, delete the profile directory.
+
+The launcher never sees your password. The browser's own password manager
+could store it if you asked it to, so the app switches that off when it first
+creates the profile.
+
+### Where data goes over the network
+
+- iCloud traffic goes to Apple, over HTTPS.
+- `tools/get-chromium.sh` downloads the browser from Google's Chromium snapshot
+  archive. That happens once, at install time, and never again unless you run
+  it.
+- Chromium itself is an ordinary browser and reaches Google for its own
+  services (Safe Browsing, component updates). It is a stock build with no
+  Google API keys, so account-linked services such as Sync are unavailable.
+- This project adds no analytics and no telemetry of its own.
+
+### What happens during "Sign in with iPhone"
+
+This flow is handled entirely by Chromium — the same code that runs it in
+Chrome. In outline:
+
+- The QR code is not a password or an account name. It contains a one-time key
+  and a random secret, generated for that single attempt, used to set up an
+  encrypted channel with your phone.
+- Bluetooth carries one encrypted broadcast from your phone, proving it is
+  physically nearby. No pairing takes place.
+- The exchange is end-to-end encrypted between browser and phone, relayed
+  through a tunnel server that sees only ciphertext.
+- **Your passkey's private key never leaves your iPhone.** That is the core
+  guarantee of the protocol.
+
+### Security design, for the technically inclined
+
+The security argument for this app rests on one property: **it has no runtime**.
+There is no long-lived process of ours, no IPC surface, no injected script, no
+custom protocol handler, no privileged bridge. `icloud-app.sh` validates two
+arguments, `exec`s a browser, and ceases to exist. Everything after that is
+Chromium's threat model, not one this project invented.
+
+That is a deliberate reversal of the previous design. Until version 2.0 this
+was an Electron app, and Electron apps are only as safe as the boundary the
+author draws between page and host. That boundary is where the interesting bugs
+live: preload scripts, `contextIsolation`, IPC validation, navigation
+allowlists, permission handlers. A security review of the 1.x code found real
+defects in exactly those places. Version 2.0 deletes the boundary rather than
+guarding it.
+
+Concretely, what you get and where it comes from:
+
+| Property | Provided by |
+|----------|-------------|
+| Renderer sandbox, site isolation, per-site processes | Chromium |
+| TLS validation, HSTS, certificate transparency | Chromium |
+| Permission prompts (camera, mic, location, clipboard) | Chromium |
+| WebAuthn, passkeys, hybrid transport, PRF | Chromium |
+| Security patches | Only when you run `tools/get-chromium.sh --force` |
+| Session isolation from your other browsing | A dedicated `--user-data-dir` |
+| Restriction to Apple's domains | Not enforced — see below |
+
+**On domain restriction — the weakest point of this design.** The 1.x app
+blocked navigation away from `*.apple.com` and `*.icloud.com`. This version
+does not, and you should understand what that costs.
+
+An app-mode window shows the origin only *after* you navigate off the app's
+own origin, and it does not hand links to your default browser: an `https://`
+link clicked inside iCloud Mail opens in the same window, in the same profile
+as your live Apple session, with no address bar. This build also has no Safe
+Browsing (see below), so a phishing page gets no warning either.
+
+Concretely: treat links in iCloud Mail as you would in any mail client, and do
+not type your Apple ID password into a window you reached by clicking a link.
+Re-adding an allowlist would mean re-introducing a runtime process, which is
+what made the old design fragile — so this is a real trade-off, not a solved
+problem.
+
+**On Safe Browsing.** The bundled build has no Google API keys, so Safe
+Browsing, download protection and phishing warnings are **inactive**. A
+distribution-packaged browser has them. This is the strongest argument for
+pointing `ICLOUD_APP_BROWSER` at one.
+
+**On the build itself.** The pinned build comes from the snapshot archive,
+which publishes trunk builds rather than stable releases. They are not
+`is_official_build`, which means Control Flow Integrity and profile-guided
+optimisation are absent — mitigations a stable Chromium or Chrome has.
+
+**On the browser download.** `tools/get-chromium.sh` fetches a build over HTTPS
+from Google's Chromium snapshot archive and runs it. The transport is
+authenticated; the artefact is not independently verified against a published
+checksum or signature, because the snapshot archive does not publish per-build
+signatures. Trust therefore rests on TLS to `storage.googleapis.com`. If that
+is not acceptable in your threat model, point `ICLOUD_APP_BROWSER` at a browser
+you obtained by a route you trust — a distribution package, for instance — and
+the launcher will use it instead.
+
+**On update cadence.** Nothing updates the browser automatically. A browser
+that handles your credentials and does not self-update is a real weakness.
+`./tools/get-chromium.sh --force` fetches the current build — run it
+periodically — or set `ICLOUD_APP_BROWSER` to a browser your distribution
+keeps patched, which is what I would recommend for anyone not prepared to do
+that by hand.
+
+**On what remains ours.** Two things: the launcher, about 170 lines of shell,
+and `tools/show-changelog.js`, which turns `CHANGELOG.md` into a local page.
+The changelog page escapes all text before rendering and applies a
+`default-src 'none'` policy, so even a hostile `CHANGELOG.md` cannot execute
+anything. Both are short enough to read in full, which is the point.
+
+## Versioning and changelog
+
+The project follows [semantic versioning](https://semver.org/). Every release
+is documented in [CHANGELOG.md](CHANGELOG.md), and the first time you start the
+app after updating, a window summarises what changed. It appears once per
+version, never on a fresh install.
+
+## Updating
 
 ```bash
-cat > ~/icloud-electron/icloud-electron.sh << 'EOF'
-#!/bin/bash
-cd ~/icloud-electron
-npx electron . "$@"
-EOF
-
-chmod +x ~/icloud-electron/icloud-electron.sh
-sudo ln -s ~/icloud-electron/icloud-electron.sh /usr/local/bin/icloud-electron
+cd ~/icloud-electron && git pull
+./tools/get-chromium.sh --force   # only when you want a newer browser
 ```
 
-### Step 6b: Install iCloud Icons (Optional)
+## Troubleshooting
 
-Download Apple-style icons for better integration:
+**"The browser this app runs on is not installed yet"** — run
+`./tools/get-chromium.sh`.
+
+**The download fails with "revision is no longer available"** — Chromium
+snapshots are eventually pruned. The error message prints the command that
+fetches the current build instead.
+
+**"Sign in with iPhone" cannot connect** — check Bluetooth first:
 
 ```bash
-cd ~/icloud-electron
-chmod +x install-icons.sh
-./install-icons.sh
+rfkill list bluetooth      # must not be blocked
+bluetoothctl show          # "Powered: yes"
+bluetoothctl power on      # if it isn't
 ```
 
-This will download iCloud icons to `~/.local/share/icons/icloud/`. If it fails, the app will use system default icons.
+Then make sure your iPhone has Bluetooth on and is near the computer.
 
-### Step 7: Create Desktop Shortcuts
+**The window has no icon of its own** — regenerate the shortcuts with
+`./tools/install-shortcuts.sh`, which sets `StartupWMClass` correctly.
+
+**"The SUID sandbox helper binary was found, but is not configured correctly"**
+— the browser refuses to start without its sandbox, which is the right
+behaviour. It happens on distributions that restrict unprivileged user
+namespaces, such as Ubuntu 24.04. Fix it by making the helper setuid:
 
 ```bash
-# Check if custom icons were installed
-if [ -d "$HOME/.local/share/icons/icloud" ]; then
-    PHOTOS_ICON="$HOME/.local/share/icons/icloud/photos.svg"
-    DRIVE_ICON="$HOME/.local/share/icons/icloud/drive.svg"
-    CONTACTS_ICON="$HOME/.local/share/icons/icloud/contacts.svg"
-else
-    # Fallback to system icons
-    PHOTOS_ICON="emblem-photos"
-    DRIVE_ICON="folder-cloud"
-    CONTACTS_ICON="x-office-address-book"
-fi
+sudo chown root:root ~/.local/share/icloud-app/chromium/chrome_sandbox
+sudo chmod 4755 ~/.local/share/icloud-app/chromium/chrome_sandbox
+```
 
-mkdir -p ~/.local/share/applications
+**Never add `--no-sandbox`.** It is the advice you will find first, and it
+removes the single most important protection between a web page and your
+files.
 
-cat > ~/.local/share/applications/icloud-photos-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Photos
-Comment=Access iCloud Photos
-Exec=/usr/local/bin/icloud-electron photos Photos
-Icon=$PHOTOS_ICON
-Terminal=false
-Categories=Network;Graphics;Photography;
-EOF
+## Uninstalling
 
-cat > ~/.local/share/applications/icloud-drive-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Drive
-Comment=Access iCloud Drive
-Exec=/usr/local/bin/icloud-electron iclouddrive Drive
-Icon=$DRIVE_ICON
-Terminal=false
-Categories=Network;FileTransfer;
-EOF
-
-cat > ~/.local/share/applications/icloud-contacts-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Contacts
-Comment=Access iCloud Contacts
-Exec=/usr/local/bin/icloud-electron contacts Contacts
-Icon=$CONTACTS_ICON
-Terminal=false
-Categories=Network;Office;ContactManagement;
-EOF
-
+```bash
+rm ~/.local/share/applications/icloud-*.desktop
 update-desktop-database ~/.local/share/applications/
+sudo rm /usr/local/bin/icloud-app
+rm -rf ~/.local/share/icloud-app     # the bundled browser
+rm -rf ~/.config/icloud-app          # your session
+rm -rf ~/icloud-electron             # the app itself
 ```
 
-## 🚀 Usage
+## License
 
-### Launch from Application Menu
+MIT — see LICENSE.
 
-After installation, you'll find these applications in your menu:
-- **iCloud Photos** - Access your photo library
-- **iCloud Drive** - Access your cloud storage
-- **iCloud Contacts** - Manage your contacts
+## Disclaimer
 
-### Launch from Terminal
+Unofficial, and not affiliated with or endorsed by Apple Inc. iCloud is a
+trademark of Apple Inc.
 
-```bash
-# Photos
-icloud-electron photos Photos
+## Keywords
 
-# Drive
-icloud-electron iclouddrive Drive
-
-# Contacts
-icloud-electron contacts Contacts
-
-# Notes (if you want)
-icloud-electron notes Notes
-
-# Mail (if you want)
-icloud-electron mail Mail
-```
-
-## 🔐 Login Information
-
-### ⚠️ Important: Passkey Login Does Not Work
-
-When you first open an iCloud service, you'll see a login screen. **DO NOT use "Sign in with passkey"** - it will hang and not receive the verification popup on your other Apple devices.
-
-**Instead:**
-1. Click **"Continue with password"**
-2. Enter your Apple ID email
-3. Enter your Apple ID password
-4. Complete two-factor authentication (you'll get a code on your iPhone/iPad/Mac)
-5. Check **"Keep me signed in"** to stay logged in
-
-After logging in once, all iCloud services will share the same session.
-
-## 🐛 Troubleshooting
-
-### "FATAL: The SUID sandbox helper binary was found, but is not configured correctly"
-
-Run this command:
-```bash
-sudo chown root:root ~/icloud-electron/node_modules/electron/dist/chrome-sandbox
-sudo chmod 4755 ~/icloud-electron/node_modules/electron/dist/chrome-sandbox
-```
-
-### Login screen is cut off or button not visible
-
-The window is resizable. Just drag the corner to make it larger, or maximize it.
-
-### "Your browser is not supported" error
-
-This shouldn't happen with Electron. If it does:
-1. Make sure you're using Electron 30 or higher: `npx electron --version`
-2. Update Electron: `npm install electron@latest`
-3. Repeat Step 4 (sandbox permissions) after updating
-
-### Multiple Electron instances causing errors
-
-If you get IndexedDB or quota database errors:
-```bash
-killall electron
-```
-
-Then try launching again.
-
-### Can't find the application in the menu
-
-Update your desktop database:
-```bash
-update-desktop-database ~/.local/share/applications/
-```
-
-Log out and log back in, or restart your desktop environment.
-
-## 📝 Adding More iCloud Services
-
-You can create shortcuts for any iCloud service using this pattern:
-
-```bash
-icloud-electron <service-name> <window-title>
-```
-
-**Available services:**
-- `photos` - iCloud Photos
-- `iclouddrive` - iCloud Drive
-- `contacts` - Contacts
-- `notes` - Notes
-- `mail` - iCloud Mail
-- `calendar` - Calendar
-- `reminders` - Reminders
-- `pages` - Pages
-- `numbers` - Numbers
-- `keynote` - Keynote
-
-### Creating Desktop Shortcuts for Additional Services
-
-You can create desktop shortcuts for any iCloud service. Here are ready-to-use commands for all major services:
-
-**Note:** Replace `Icon=` paths below with your installed icon paths if you ran `install-icons.sh`. Otherwise, the system default icons will be used.
-
-**Notes:**
-```bash
-NOTES_ICON="${HOME}/.local/share/icons/icloud/notes.svg"
-[ ! -f "$NOTES_ICON" ] && NOTES_ICON="accessories-text-editor"
-
-cat > ~/.local/share/applications/icloud-notes-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Notes
-Comment=Access iCloud Notes
-Exec=/usr/local/bin/icloud-electron notes Notes
-Icon=$NOTES_ICON
-Terminal=false
-Categories=Network;Office;
-EOF
-```
-
-**Mail:**
-```bash
-MAIL_ICON="${HOME}/.local/share/icons/icloud/mail.svg"
-[ ! -f "$MAIL_ICON" ] && MAIL_ICON="internet-mail"
-
-cat > ~/.local/share/applications/icloud-mail-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Mail
-Comment=Access iCloud Mail
-Exec=/usr/local/bin/icloud-electron mail Mail
-Icon=$MAIL_ICON
-Terminal=false
-Categories=Network;Email;
-EOF
-```
-
-**Calendar:**
-```bash
-CALENDAR_ICON="${HOME}/.local/share/icons/icloud/calendar.svg"
-[ ! -f "$CALENDAR_ICON" ] && CALENDAR_ICON="office-calendar"
-
-cat > ~/.local/share/applications/icloud-calendar-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Calendar
-Comment=Access iCloud Calendar
-Exec=/usr/local/bin/icloud-electron calendar Calendar
-Icon=$CALENDAR_ICON
-Terminal=false
-Categories=Network;Office;Calendar;
-EOF
-```
-
-**Reminders:**
-```bash
-REMINDERS_ICON="${HOME}/.local/share/icons/icloud/reminders.svg"
-[ ! -f "$REMINDERS_ICON" ] && REMINDERS_ICON="task-due"
-
-cat > ~/.local/share/applications/icloud-reminders-electron.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=iCloud Reminders
-Comment=Access iCloud Reminders
-Exec=/usr/local/bin/icloud-electron reminders Reminders
-Icon=$REMINDERS_ICON
-Terminal=false
-Categories=Network;Office;ProjectManagement;
-EOF
-```
-
-**Pages:**
-```bash
-cat > ~/.local/share/applications/icloud-pages-electron.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=iCloud Pages
-Comment=Access iCloud Pages
-Exec=/usr/local/bin/icloud-electron pages Pages
-Icon=x-office-document
-Terminal=false
-Categories=Network;Office;WordProcessor;
-EOF
-```
-
-**Numbers:**
-```bash
-cat > ~/.local/share/applications/icloud-numbers-electron.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=iCloud Numbers
-Comment=Access iCloud Numbers
-Exec=/usr/local/bin/icloud-electron numbers Numbers
-Icon=x-office-spreadsheet
-Terminal=false
-Categories=Network;Office;Spreadsheet;
-EOF
-```
-
-**Keynote:**
-```bash
-cat > ~/.local/share/applications/icloud-keynote-electron.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=iCloud Keynote
-Comment=Access iCloud Keynote
-Exec=/usr/local/bin/icloud-electron keynote Keynote
-Icon=x-office-presentation
-Terminal=false
-Categories=Network;Office;Presentation;
-EOF
-```
-
-**After creating any desktop file, update the database:**
-```bash
-update-desktop-database ~/.local/share/applications/
-```
-
-## 🗑️ Uninstallation
-
-```bash
-# Remove desktop shortcuts
-rm ~/.local/share/applications/icloud-*-electron.desktop
-update-desktop-database ~/.local/share/applications/
-
-# Remove global launcher
-sudo rm /usr/local/bin/icloud-electron
-
-# Remove application folder
-rm -rf ~/icloud-electron
-
-# Remove stored data (login sessions, cache)
-rm -rf ~/.config/icloud-electron
-```
-
-## 🔒 Privacy & Security
-
-- This application runs entirely on your local machine
-- No data is sent to third parties (only to Apple's iCloud servers)
-- Login sessions are stored locally in `~/.config/icloud-electron/`
-- The application uses the same Chromium engine as Google Chrome
-- Your Apple ID password is only sent to Apple's servers (via HTTPS)
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-MIT License - see LICENSE file for details
-
-## ⚠️ Disclaimer
-
-This is an unofficial tool and is not affiliated with, endorsed by, or connected to Apple Inc. iCloud is a trademark of Apple Inc.
-
-## 🙏 Credits
-
-- Built with [Electron](https://www.electronjs.org/)
-- Inspired by the need for iCloud access on Linux
-
-## 📚 Keywords
-
-icloud linux, icloud ubuntu, icloud electron, icloud photos linux, icloud drive linux, icloud contacts linux, apple icloud linux, icloud web linux, icloud client linux, icloud wrapper linux, access icloud on linux, icloud debian, icloud fedora, icloud arch linux, icloud kde, icloud gnome
+icloud linux, icloud ubuntu, icloud photos linux, icloud drive linux, icloud
+contacts linux, apple icloud linux, icloud client linux, sign in with iphone
+linux, passkey linux, icloud debian, icloud fedora, icloud arch linux, icloud
+kde, icloud gnome
