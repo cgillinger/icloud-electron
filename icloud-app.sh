@@ -52,6 +52,14 @@ if [ -n "${ICLOUD_APP_BROWSER:-}" ]; then
     echo "icloud-app: using browser from ICLOUD_APP_BROWSER: $BROWSER" >&2
 fi
 
+# A browser update staged by an earlier launch is swapped in now, before the
+# browser starts. Fast, local-only, and skipped while a window is still open -
+# a running browser cannot have its files replaced underneath it.
+GET_CHROMIUM="$SCRIPT_DIR/tools/get-chromium.sh"
+if [ -z "${ICLOUD_APP_BROWSER:-}" ] && [ -x "$GET_CHROMIUM" ]; then
+    "$GET_CHROMIUM" --apply-staged >/dev/null || true
+fi
+
 if [ ! -x "$BROWSER" ]; then
     cat >&2 <<EOF
 The browser this app runs on is not installed yet.
@@ -64,6 +72,23 @@ It downloads Chromium (about 230 MB) into
 $CHROMIUM_DIR
 EOF
     exit 1
+fi
+
+# Look for a newer browser at most once per ICLOUD_APP_UPDATE_INTERVAL
+# seconds (default 24 h; 0 disables). The check runs in the background so it
+# never delays the window: anything it finds is downloaded, verified and
+# staged beside the install, then swapped in by a later launch. It never
+# prompts and logs to stderr only.
+UPDATE_INTERVAL="${ICLOUD_APP_UPDATE_INTERVAL:-86400}"
+if [ -z "${ICLOUD_APP_BROWSER:-}" ] && [ -x "$GET_CHROMIUM" ] \
+        && printf '%s' "$UPDATE_INTERVAL" | grep -Eq '^[0-9]+$' \
+        && [ "$UPDATE_INTERVAL" -gt 0 ]; then
+    STAMP="$(dirname "$CHROMIUM_DIR")/.update-check"
+    [ -f "$STAMP" ] || STAMP="$(dirname "$CHROMIUM_DIR")/chromium-build.txt"
+    LAST_CHECK="$(stat -c %Y "$STAMP" 2>/dev/null || echo 0)"
+    if [ $(( $(date +%s) - LAST_CHECK )) -ge "$UPDATE_INTERVAL" ]; then
+        ( "$GET_CHROMIUM" --stage >/dev/null & )
+    fi
 fi
 
 # 0700: Chromium creates its own subdirectories this way, and the launcher

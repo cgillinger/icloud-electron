@@ -3,6 +3,13 @@
 Your iCloud services — Photos, Drive, Contacts, Mail and the rest — each in its
 own application window, launched from your desktop menu.
 
+**"Sign in with iPhone" actually works.** Scan the QR code on Apple's login
+page with your iPhone camera, approve with Face ID or Touch ID, and you're in —
+no password typing. So do passkeys and every other browser feature, because
+this runs a complete browser. Electron-based wrappers cannot do this
+([electron/electron#24573](https://github.com/electron/electron/issues/24573));
+making it work is what version 2.0 was about.
+
 > This is a personal hobby project I build for my own use and publish in case
 > it's useful to someone else. I work on it in my spare time, so issues and PRs
 > are welcome but replies may be slow. Use at your own risk.
@@ -14,13 +21,12 @@ own application window, launched from your desktop menu.
 A launcher that opens iCloud in a dedicated Chromium window — no tabs, no
 address bar, one window per service, and your session kept between launches.
 
-It ships its own Chromium build rather than using whatever browser happens to
-be installed, so it behaves the same on every machine and nothing breaks when
-you change your default browser.
-
-**Sign in with iPhone works.** Scan the QR code on Apple's login page with your
-iPhone camera and you're in — no password typing. So do passkeys, and every
-other browser feature, because this runs a complete browser.
+It ships its own browser rather than using whatever happens to be installed,
+so it behaves the same on every machine and nothing breaks when you change
+your default browser. By default that browser is Google Chrome's stable
+release, fetched from Google's signed repository and **kept up to date
+automatically** — a pure open-source Chromium option exists too, see
+[Choosing the browser source](#choosing-the-browser-source).
 
 ### What it doesn't do
 
@@ -30,8 +36,10 @@ other browser feature, because this runs a complete browser.
 
 ## Requirements
 
-- A Linux desktop (tested on Ubuntu 24.04 / Kubuntu 24.04)
-- `curl` and `unzip`, to fetch the browser once
+- A Linux desktop (tested on Ubuntu 24.04 / Kubuntu 24.04), x86_64
+- `curl` and `gpgv`, to fetch and verify the browser — both preinstalled on
+  most distributions (`unzip` too, if you pick one of the zip-based browser
+  sources)
 - About 500 MB of disk space
 - Bluetooth, **only** if you want "Sign in with iPhone" — the phone proves it
   is nearby over Bluetooth Low Energy
@@ -44,7 +52,7 @@ You do **not** need Chrome, Chromium, Electron, or Node installed to run it.
 ```bash
 git clone https://github.com/cgillinger/icloud-electron.git ~/icloud-electron
 cd ~/icloud-electron
-./tools/get-chromium.sh          # downloads Chromium, about 230 MB, once
+./tools/get-chromium.sh          # downloads the browser, about 140 MB, once
 ./icloud-app.sh photos Photos    # try it
 ```
 
@@ -100,9 +108,39 @@ never resolves. That is
 [electron/electron#24573](https://github.com/electron/electron/issues/24573),
 open since 2020 with no solution on Linux.
 
-Running a real Chromium sidesteps the whole problem: there is nothing to
-reimplement, because the browser already does it. Chromium is BSD-licensed and
-may be redistributed, which Google Chrome may not.
+Running a real browser sidesteps the whole problem: there is nothing to
+reimplement, because the browser already does it. The repository never ships a
+browser binary — the install script downloads one onto your machine, the same
+way `npm install` used to download Electron.
+
+## Choosing the browser source
+
+`tools/get-chromium.sh` installs one of three browsers, chosen with
+`ICLOUD_APP_BROWSER_SOURCE`. The choice is sticky: updates keep following the
+source you installed from.
+
+| Source | What it is | Verified how | Safe Browsing |
+|---|---|---|---|
+| `chrome` *(default)* | Google Chrome, stable channel, from Google's apt repository | GPG signature chain, key pinned in this repo | yes |
+| `cft` | Chrome for Testing, stable channel | size + MD5 from storage metadata (integrity only) | yes |
+| `chromium-snapshot` | Pure open-source Chromium, trunk snapshot | nothing published to verify against | no |
+
+The default is Chrome because it is the only source that is
+signature-verified, and because Safe Browsing matters more than usual in a
+window with no address bar (see the security section).
+
+**If you want no proprietary code on your machine**, the pure-Chromium option
+is a supported, first-class choice — not a leftover:
+
+```bash
+ICLOUD_APP_BROWSER_SOURCE=chromium-snapshot ./tools/get-chromium.sh --force
+```
+
+Its honest trade-offs: snapshots are trunk builds rather than stable releases,
+they lack the `is_official_build` exploit mitigations (CFI, PGO), they carry
+no Google API keys so Safe Browsing is inactive, and the archive publishes no
+signatures, so the download cannot be verified. You get a fully open-source
+browser; you give up those protections knowingly.
 
 ## "Is it safe to log in to my Apple account here?"
 
@@ -127,9 +165,10 @@ That means:
 - **You are logging in to Apple's real website.** Not a copy, not a form this
   project made. It is `https://www.icloud.com`, served by Apple, over an
   encrypted connection the browser verifies.
-- **The browser is a normal one.** It is Chromium, the open-source browser that
-  Chrome, Edge, Brave and Opera are all built from. This project doesn't modify
-  it — it downloads it and starts it.
+- **The browser is a normal one.** By default it is Google Chrome, the same
+  browser hundreds of millions of people use — or, if you prefer, the
+  open-source Chromium it is built from. This project doesn't modify it — it
+  downloads it, verifies it, and starts it.
 - **This project has no server and collects nothing.** It has no account, no
   statistics and no error reporting of its own. The browser it starts is an
   ordinary browser, so it does contact Google for its own housekeeping, the
@@ -167,7 +206,7 @@ talking to Apple over HTTPS, exactly as any browser would. Nothing is injected
 into Apple's pages, and there is no extension, no proxy, and no
 instrumentation.
 
-You can read the entire launcher in a couple of minutes — about 170 lines of
+You can read the entire launcher in a couple of minutes — about 190 lines of
 shell, most of it argument checking and window placement.
 
 ### What is stored on your disk
@@ -195,12 +234,13 @@ creates the profile.
 ### Where data goes over the network
 
 - iCloud traffic goes to Apple, over HTTPS.
-- `tools/get-chromium.sh` downloads the browser from Google's Chromium snapshot
-  archive. That happens once, at install time, and never again unless you run
-  it.
-- Chromium itself is an ordinary browser and reaches Google for its own
-  services (Safe Browsing, component updates). It is a stock build with no
-  Google API keys, so account-linked services such as Sync are unavailable.
+- `tools/get-chromium.sh` downloads the browser from Google — by default from
+  the same signed apt repository your distribution would use for Chrome. After
+  that, launching the app checks that repository for a newer stable release at
+  most once a day, in the background.
+- The browser is an ordinary browser and reaches Google for its own services
+  (Safe Browsing, component metadata), the same as any Chrome or Chromium
+  would. No Google account is involved unless you sign in to one yourself.
 - This project adds no analytics and no telemetry of its own.
 
 ### What happens during "Sign in with iPhone"
@@ -242,7 +282,7 @@ Concretely, what you get and where it comes from:
 | TLS validation, HSTS, certificate transparency | Chromium |
 | Permission prompts (camera, mic, location, clipboard) | Chromium |
 | WebAuthn, passkeys, hybrid transport, PRF | Chromium |
-| Security patches | Only when you run `tools/get-chromium.sh --force` |
+| Security patches | Checked for daily in the background, installed on the next launch |
 | Session isolation from your other browsing | A dedicated `--user-data-dir` |
 | Restriction to Apple's domains | Not enforced — see below |
 
@@ -253,8 +293,9 @@ does not, and you should understand what that costs.
 An app-mode window shows the origin only *after* you navigate off the app's
 own origin, and it does not hand links to your default browser: an `https://`
 link clicked inside iCloud Mail opens in the same window, in the same profile
-as your live Apple session, with no address bar. This build also has no Safe
-Browsing (see below), so a phishing page gets no warning either.
+as your live Apple session, with no address bar. Safe Browsing (active in the
+default build) will warn about known phishing pages, but it cannot know a page
+is impersonating Apple the moment it goes up.
 
 Concretely: treat links in iCloud Mail as you would in any mail client, and do
 not type your Apple ID password into a window you reached by clicking a link.
@@ -262,45 +303,54 @@ Re-adding an allowlist would mean re-introducing a runtime process, which is
 what made the old design fragile — so this is a real trade-off, not a solved
 problem.
 
-**On Safe Browsing.** The bundled build has no Google API keys, so Safe
-Browsing, download protection and phishing warnings are **inactive**. A
-distribution-packaged browser has them. This is the strongest argument for
-pointing `ICLOUD_APP_BROWSER` at one.
+**On Safe Browsing.** The default build (Google Chrome) and the `cft` build
+carry Google API keys, so Safe Browsing, download protection and phishing
+warnings are **active** — verified on the shipped versions by checking the
+keys are baked into the binary. The `chromium-snapshot` build carries no keys
+and has none of this; if you choose it, you choose that too.
 
-**On the build itself.** The pinned build comes from the snapshot archive,
-which publishes trunk builds rather than stable releases. They are not
-`is_official_build`, which means Control Flow Integrity and profile-guided
-optimisation are absent — mitigations a stable Chromium or Chrome has.
+**On the build itself.** The default source installs the current **stable
+release**, an official build with the mitigations that entails (Control Flow
+Integrity, profile-guided optimisation). The `chromium-snapshot` source
+installs trunk builds, which have neither — that trade-off is described under
+[Choosing the browser source](#choosing-the-browser-source).
 
-**On the browser download.** `tools/get-chromium.sh` fetches a build over HTTPS
-from Google's Chromium snapshot archive and runs it. The transport is
-authenticated; the artefact is not independently verified against a published
-checksum or signature, because the snapshot archive does not publish per-build
-signatures. Trust therefore rests on TLS to `storage.googleapis.com`. If that
-is not acceptable in your threat model, point `ICLOUD_APP_BROWSER` at a browser
-you obtained by a route you trust — a distribution package, for instance — and
+**On the browser download.** The default source is verified the same way `apt`
+verifies packages, independent of TLS: `Release.gpg` signs `Release`, which
+carries the hash of `Packages`, which carries the SHA-256 of the `.deb` — all
+checked against Google's package-signing key **pinned in this repository**
+(`tools/google-linux-signing-key.gpg`, fingerprint
+`EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796`). Nothing is executed
+before the chain checks out. The `cft` source is checked against size and MD5
+from storage metadata — an integrity check from the same server as the file,
+so weaker. The `chromium-snapshot` source publishes nothing to verify against;
+its digest is recorded, not proven. If none of that fits your threat model,
+point `ICLOUD_APP_BROWSER` at a browser you obtained by a route you trust and
 the launcher will use it instead.
 
-**On update cadence.** Nothing updates the browser automatically. A browser
-that handles your credentials and does not self-update is a real weakness.
-`./tools/get-chromium.sh --force` fetches the current build — run it
-periodically — or set `ICLOUD_APP_BROWSER` to a browser your distribution
-keeps patched, which is what I would recommend for anyone not prepared to do
-that by hand.
+**On update cadence.** The browser keeps itself current. At most once per
+`ICLOUD_APP_UPDATE_INTERVAL` seconds (default 24 hours), launching the app
+checks for a newer stable release in the background — it never delays the
+window. A newer release is downloaded, verified, staged beside the current
+install, and swapped in on the next launch, because a running browser cannot
+have its files replaced underneath it. Nothing prompts and nothing restarts;
+progress goes to stderr only. Set `ICLOUD_APP_UPDATE_INTERVAL=0` to disable,
+and use `./tools/get-chromium.sh --check` to see installed versus available at
+any time.
 
-**On what remains ours.** Two things: the launcher, about 170 lines of shell,
-and `tools/show-changelog.js`, which turns `CHANGELOG.md` into a local page.
-The changelog page escapes all text before rendering and applies a
+**On what remains ours.** Three things: the launcher, about 190 lines of
+shell; `tools/get-chromium.sh`, about 470 lines that download, verify and swap
+the browser; and `tools/show-changelog.js`, which turns `CHANGELOG.md` into a
+local page. The changelog page escapes all text before rendering and applies a
 `default-src 'none'` policy, so even a hostile `CHANGELOG.md` cannot execute
-anything. Both are short enough to read in full, which is the point.
+anything. All three are short enough to read in full, which is the point.
 
 ## Planned work
 
-[`docs/TASK-browser-updates.md`](docs/TASK-browser-updates.md) describes the
-next piece of work: sourcing the bundled browser from a stable, signed channel
-and keeping it updated automatically. That closes the known weaknesses
-described above. A pure-Chromium option will remain for anyone who wants no
-proprietary code.
+Version 2.1.0 implemented [`docs/TASK-browser-updates.md`](docs/TASK-browser-updates.md):
+the browser now comes from a stable, signed channel and keeps itself updated.
+What remains open from the 2.0.0 security review — the absence of a domain
+allowlist chief among it — is listed at the end of that document.
 
 ## Versioning and changelog
 
@@ -313,7 +363,15 @@ version, never on a fresh install.
 
 ```bash
 cd ~/icloud-electron && git pull
-./tools/get-chromium.sh --force   # only when you want a newer browser
+```
+
+The browser updates itself: launching the app checks for a newer stable
+release at most once a day and installs it over the next two launches. To see
+where you stand or force the matter:
+
+```bash
+./tools/get-chromium.sh --check   # installed versus available
+./tools/get-chromium.sh --force   # reinstall the current build now
 ```
 
 ## Troubleshooting
@@ -321,9 +379,9 @@ cd ~/icloud-electron && git pull
 **"The browser this app runs on is not installed yet"** — run
 `./tools/get-chromium.sh`.
 
-**The download fails with "revision is no longer available"** — Chromium
-snapshots are eventually pruned. The error message prints the command that
-fetches the current build instead.
+**The download fails with "revision is no longer available"** — applies to the
+`chromium-snapshot` source: snapshots are eventually pruned. Re-run without
+`ICLOUD_APP_CHROMIUM_REVISION` set to fetch the current build.
 
 **"Sign in with iPhone" cannot connect** — check Bluetooth first:
 
@@ -341,12 +399,18 @@ Then make sure your iPhone has Bluetooth on and is near the computer.
 **"The SUID sandbox helper binary was found, but is not configured correctly"**
 — the browser refuses to start without its sandbox, which is the right
 behaviour. It happens on distributions that restrict unprivileged user
-namespaces, such as Ubuntu 24.04. Fix it by making the helper setuid:
+namespaces, such as Ubuntu 24.04. Fix it by making the helper setuid (it is
+named `chrome-sandbox` in Chrome builds, `chrome_sandbox` in CfT and snapshot
+builds):
 
 ```bash
-sudo chown root:root ~/.local/share/icloud-app/chromium/chrome_sandbox
-sudo chmod 4755 ~/.local/share/icloud-app/chromium/chrome_sandbox
+sudo chown root:root ~/.local/share/icloud-app/chromium/chrome-sandbox
+sudo chmod 4755 ~/.local/share/icloud-app/chromium/chrome-sandbox
 ```
+
+On such systems a staged browser update is **not** applied until its helper
+has been made setuid the same way — the launcher prints the exact commands
+rather than swapping in a browser that would refuse to start.
 
 **Never add `--no-sandbox`.** It is the advice you will find first, and it
 removes the single most important protection between a web page and your

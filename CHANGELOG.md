@@ -6,6 +6,59 @@ this project uses [semantic versioning](https://semver.org/).
 The app shows the newest entries in a window the first time you start it after
 an update.
 
+## [2.1.0] - 2026-08-06
+
+### Added
+
+- **The browser now keeps itself current.** At most once a day, launching the
+  app checks for a newer stable release in the background, downloads and
+  verifies it beside the current install, and swaps it in on the next launch.
+  The check never delays or interrupts a window, never prompts, and can be
+  tuned or disabled with `ICLOUD_APP_UPDATE_INTERVAL` (seconds; `0` disables).
+- **The browser source is a choice**, made with `ICLOUD_APP_BROWSER_SOURCE`:
+  `chrome` (default) is Google Chrome stable from Google's GPG-signed apt
+  repository; `cft` is Chrome for Testing stable, integrity-checked against
+  Google Cloud Storage metadata; `chromium-snapshot` is pure open-source
+  Chromium for anyone who wants no proprietary code — still supported, still
+  tested, with its trade-offs stated plainly in the README. The choice is
+  sticky: updates follow the source you installed from.
+- `tools/get-chromium.sh --check` reports the installed versus available
+  version from the terminal.
+
+### Changed
+
+- **The default browser is now Google Chrome stable** instead of a Chromium
+  trunk snapshot. Installs made by 2.0.0 (which recorded no source choice)
+  migrate to the default on their next update; set
+  `ICLOUD_APP_BROWSER_SOURCE=chromium-snapshot` before then to stay on pure
+  Chromium.
+
+### Security
+
+This release closes the browser-supply weaknesses found by the 2.0.0 security
+review:
+
+- **Stable channel instead of trunk.** The default build is an official stable
+  release, with the exploit mitigations trunk snapshots lack (Control Flow
+  Integrity, profile-guided optimisation).
+- **The download is verified before anything is executed.** The default source
+  follows the same chain of trust `apt` uses: `Release.gpg` signs `Release`,
+  which carries the hash of `Packages`, which carries the SHA-256 of the
+  package — verified against Google's signing key **pinned in this repo**
+  (fingerprint `EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796`), so trust
+  no longer rests on TLS alone. The `cft` source verifies size and MD5 from
+  storage metadata (integrity only); the snapshot source remains unverifiable,
+  which is documented rather than hidden.
+- **Safe Browsing is active** in the default build, and in Chrome for Testing
+  (verified: both carry Google API keys; the snapshot build carries none).
+  This matters here because the window has no address bar and no domain
+  allowlist. The 2.0.0 test for this — `strings chrome | grep -x dummytoken` —
+  turned out not to discriminate: that string is a compiled-in constant present
+  even in builds with keys. Key presence itself was checked instead.
+- **A frozen browser can no longer happen silently.** 2.0.0 pinned a revision
+  and updated only by hand; the browser handling the Apple ID password now
+  tracks the stable channel on its own.
+
 ## [2.0.0] - 2026-08-06
 
 ### Added

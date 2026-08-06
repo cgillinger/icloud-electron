@@ -1,9 +1,30 @@
 # Task: keep the bundled browser current and verified
 
-**Status:** not started
+**Status:** implemented in 2.1.0 (2026-08-06) — see outcome notes below;
+"Sign in with iPhone" end-to-end verification on the new browser still pending
 **Created:** 2026-08-06
 **Applies to:** version 2.0.0
 **Estimated size:** one focused session
+
+## Outcome notes (2026-08-06)
+
+- Implemented as planned: `ICLOUD_APP_BROWSER_SOURCE` with `chrome` (default),
+  `cft`, `chromium-snapshot`; GPG-verified apt chain with the key pinned at
+  `tools/google-linux-signing-key.gpg`; background staged updates applied on
+  the next launch; `--check`. All three sources install-tested on
+  Chrome 151.0.7922.75-1 / CfT 151.0.7922.76 / snapshot r1675012.
+- **The open question resolved with a correction.** The proposed test
+  (`strings chrome | grep -x dummytoken`) does not discriminate: `dummytoken`
+  is a compiled-in comparison constant, present even in Google Chrome, which
+  certainly has Safe Browsing. Counting baked-in API keys
+  (`strings chrome | grep -cE '^AIzaSy[0-9A-Za-z_-]{33}$'`) does: Chrome 4,
+  CfT 4, snapshot 0. So **CfT does have keys**, but Chrome stayed the default
+  because only the apt repository gives a TLS-independent signature.
+- The source choice is sticky (recorded in `chromium-build.txt`); 2.0.0
+  installs, which recorded no source, migrate to the default on next update.
+- On userns-restricting systems, a staged build whose sandbox helper is not
+  yet setuid is *not* swapped in; the launcher prints the needed commands
+  instead of applying an update that would refuse to start.
 
 ---
 
