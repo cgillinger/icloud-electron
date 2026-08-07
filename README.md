@@ -442,6 +442,12 @@ rm -rf ~/icloud-electron             # the app itself
 
 MIT — see LICENSE.
 
+The bundled icons in `icons/` are the exception: they come from the
+[WhiteSur icon theme](https://github.com/vinceliuice/WhiteSur-icon-theme)
+by [Vince Liuice](https://github.com/vinceliuice) and are licensed under
+GPL-3.0 — see `icons/LICENSE` and `icons/README.md` for details and
+per-file attribution. Thank you, Vince, for the beautiful icons.
+
 ## Disclaimer
 
 Unofficial, and not affiliated with or endorsed by Apple Inc. iCloud is a
