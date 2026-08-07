@@ -6,6 +6,24 @@ this project uses [semantic versioning](https://semver.org/).
 The app shows the newest entries in a window the first time you start it after
 an update.
 
+## [2.3.0] - 2026-08-07
+
+### Changed
+
+- **The icons now ship with the app.** `install-icons.sh` used to download
+  icons from the Papirus theme at install time; three of those downloads have
+  started failing (the icons were removed upstream) and the Photos icon that
+  did arrive looked like a broken-image placeholder. The repository now
+  bundles macOS-style icons from the WhiteSur icon theme (GPL-3.0, see
+  `icons/README.md`) — Photos gets its pinwheel back — and installing them is
+  a local copy that needs no network.
+
+### Fixed
+
+- The Reminders icon was installed under a misspelled name
+  (`remainders.svg`). The shortcut generator now uses the correct spelling
+  and `install-icons.sh` cleans up the stray file.
+
 ## [2.2.0] - 2026-08-06
 
 ### Changed

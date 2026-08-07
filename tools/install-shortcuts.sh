@@ -24,7 +24,7 @@ contacts|contacts|Contacts|contacts|x-office-address-book|Network;Office;Contact
 notes|notes|Notes|notes|accessories-text-editor|Network;Office;
 mail|mail|Mail|mail|internet-mail|Network;Email;
 calendar|calendar|Calendar|calendar|office-calendar|Network;Office;Calendar;
-reminders|reminders|Reminders|remainders|task-due|Network;Office;ProjectManagement;
+reminders|reminders|Reminders|reminders|task-due|Network;Office;ProjectManagement;
 pages|pages|Pages|pages|x-office-document|Network;Office;WordProcessor;
 numbers|numbers|Numbers|numbers|x-office-spreadsheet|Network;Office;Spreadsheet;
 keynote|keynote|Keynote|keynote|x-office-presentation|Network;Office;Presentation;

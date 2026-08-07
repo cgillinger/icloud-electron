@@ -67,7 +67,7 @@ Then make it available system-wide and add menu shortcuts:
 
 ```bash
 sudo ln -sf ~/icloud-electron/icloud-app.sh /usr/local/bin/icloud-app
-./install-icons.sh               # optional: Apple-style icons
+./install-icons.sh               # optional: Apple-style icons (bundled, no download)
 ```
 
 Then create the menu shortcuts:
@@ -85,6 +85,11 @@ Available services: `photos`, `iclouddrive`, `contacts`, `notes`, `mail`,
 The generated entries set `StartupWMClass` to the window identity Chromium
 actually reports, which is what gives each service its own icon in the dock
 instead of one shared browser icon.
+
+The icons installed by `install-icons.sh` ship with the repository and come
+from the [WhiteSur icon theme](https://github.com/vinceliuice/WhiteSur-icon-theme)
+(GPL-3.0) — macOS-style equivalents for each service. See `icons/README.md`
+for the exact origin of every file.
 
 ## Signing in
 
