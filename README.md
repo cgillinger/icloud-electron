@@ -91,10 +91,9 @@ from the [WhiteSur icon theme](https://github.com/vinceliuice/WhiteSur-icon-them
 (GPL-3.0) — macOS-style equivalents for each service. See `icons/README.md`
 for the exact origin of every file.
 
-![Mockup of the shortcuts in a Linux Mint menu](docs/mint-menu-mockup.png)
+![The iCloud shortcuts in a Linux Mint menu](docs/mint-menu-mockup.png)
 
-*Illustration (mockup, not a real screenshot) of how the shortcuts look in a
-Cinnamon menu with the bundled icons.*
+*The shortcuts in a Cinnamon menu with the bundled icons.*
 
 ## Signing in
 
